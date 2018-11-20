@@ -1,0 +1,13 @@
+language: go
+
+go:
+  - "1.11.2"
+
+services:
+  - docker
+
+script:
+  - make ci-docker-build
+
+after_success:
+  - make ci-docker-push
