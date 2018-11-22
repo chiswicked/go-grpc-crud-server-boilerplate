@@ -1,0 +1,21 @@
+version: '3'
+services:
+  srv:
+    build:
+      context: .
+      args:
+        ORG: test
+        SERVICE: test
+    ports:
+      - "8080:8080"
+    depends_on:
+       - db
+  db:
+    image: postgres:11.1-alpine
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: test-username
+      POSTGRES_PASSWORD: test-password
+      POSTGRES_DB: test-database

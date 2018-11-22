@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"net"
@@ -8,6 +9,7 @@ import (
 	"os"
 
 	api "github.com/chiswicked/go-grpc-crud-server-boilerplate/protobuf"
+	_ "github.com/lib/pq"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
@@ -18,29 +20,44 @@ import (
 const (
 	grpcPort = ":8090"
 	restPort = ":8080"
+
+	pgHost     = "localhost"
+	pgPort     = "5432"
+	pgUsername = "test-username"
+	pgPassword = "test-password"
+	pgDatabase = "test-database"
+	pgSSLmode  = "disable"
 )
 
 type server struct {
+	db *sql.DB
 }
 
 func main() {
 	fmt.Println(startMsg(os.Getenv("APP")))
-
-	go listenAndServeGrpc(grpcPort, &server{})
+	srv := &server{db: nil}
+	var err error
+	db, err := createDbConn()
+	if err != nil {
+		log.Fatalf("PostgreSQL connection error:, %v", err)
+	}
+	srv.db = db
+	fmt.Printf("Connected to PostgreSQL server on %v\n", pgPort)
+	go listenAndServeGrpc(grpcPort, srv)
 	log.Fatal(listenAndServeRest(restPort, grpcPort))
 
 }
 
-func listenAndServeGrpc(addr string, grpcServer api.ItemServiceServer) error {
+func listenAndServeGrpc(addr string, serviceServer api.ItemServiceServer) error {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatalf("Server startup failed: %v", err)
 	}
 
-	srv := grpc.NewServer()
-	api.RegisterItemServiceServer(srv, grpcServer)
+	grpcServer := grpc.NewServer()
+	api.RegisterItemServiceServer(grpcServer, serviceServer)
 	fmt.Printf("gRPC server listening on %v\n", addr)
-	return srv.Serve(lis)
+	return grpcServer.Serve(lis)
 }
 
 func listenAndServeRest(addr string, grpcAddr string) error {
@@ -56,6 +73,19 @@ func listenAndServeRest(addr string, grpcAddr string) error {
 	}
 	fmt.Printf("REST server listening on %v\n", addr)
 	return http.ListenAndServe(addr, mux)
+}
+
+func createDbConn() (*sql.DB, error) {
+	connStr := fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable=%s connect_timeout=60",
+		pgHost,
+		pgPort,
+		pgUsername,
+		pgPassword,
+		pgDatabase,
+		pgSSLmode,
+	)
+	return sql.Open("postgres", connStr)
 }
 
 func startMsg(app string) string {
