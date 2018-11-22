@@ -57,6 +57,7 @@ docker: docker-build
 docker-build:
 	@echo [docker-build] building docker image
 	@docker build -t $(DOCKER_IMAGE):local . \
+		--build-arg ORG=$(ORG) \
 		--build-arg SERVICE=$(SERVICE) \
 		--build-arg GITHUB_TOKEN=$(GITHUB_TOKEN)
 
@@ -109,7 +110,8 @@ ci-docker-auth:
 
 ci-docker-build:
 	@echo "[ci-docker-build] building docker image $(DOCKER_IMAGE):$(VERSION)"
-	@docker build -t $(DOCKER_IMAGE):$(VERSION) .
+	@docker build -t $(DOCKER_IMAGE):$(VERSION) . \
+		--build-arg ORG=$(ORG) \
 		--build-arg SERVICE=$(SERVICE) \
 		--build-arg GITHUB_TOKEN=$(GITHUB_TOKEN)
 

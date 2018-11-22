@@ -1,4 +1,5 @@
 FROM golang:1.11.2-alpine3.8 AS build
+ARG ORG
 ARG SERVICE
 ARG GITHUB_TOKEN
 RUN apk update && apk add git gcc make musl-dev
