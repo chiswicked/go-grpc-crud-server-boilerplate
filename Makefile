@@ -102,11 +102,11 @@ protoc-build:
 
 # CI commands
 
-.PHONY: ci-docker-auth ci-docker-build ci-docker-push
+.PHONY: ci-docker-login ci-docker-build ci-docker-push ci-docker-logout
 
-ci-docker-auth:
-	@echo "[ci-docker-auth] authenticating docker"
-	@docker login -u $(DOCKER_USERNAME) -p $(DOCKER_PASSWORD)
+ci-docker-login:
+	@echo "[ci-docker-login] logging in to docker hub"
+	@echo $(DOCKER_PASSWORD) | docker login -u $(DOCKER_USERNAME) --password-stdin
 
 ci-docker-build:
 	@echo "[ci-docker-build] building docker image $(DOCKER_IMAGE):$(VERSION)"
@@ -115,7 +115,11 @@ ci-docker-build:
 		--build-arg SERVICE=$(SERVICE) \
 		--build-arg GITHUB_TOKEN=$(GITHUB_TOKEN)
 
-ci-docker-push: ci-docker-auth
+ci-docker-push:
 	@echo "[ci-docker-push] pushing docker image $(DOCKER_IMAGE):$(VERSION) to repository"
 	@docker tag $(DOCKER_IMAGE):$(VERSION) $(DOCKER_IMAGE):latest
 	@docker push $(DOCKER_IMAGE)
+
+ci-docker-logout:
+	@echo "[ci-docker-logout] logging out of docker hub"
+	@docker logout

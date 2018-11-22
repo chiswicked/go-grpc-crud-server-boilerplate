@@ -10,4 +10,8 @@ script:
   - make ci-docker-build
 
 after_success:
+  - make ci-docker-login
   - make ci-docker-push
+
+after_script:
+  - make ci-docker-logout
