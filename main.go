@@ -23,9 +23,9 @@ const (
 
 	pgHost     = "localhost"
 	pgPort     = "5432"
-	pgUsername = "test-username"
-	pgPassword = "test-password"
-	pgDatabase = "test-database"
+	pgUsername = "testusername"
+	pgPassword = "testpassword"
+	pgDatabase = "testdatabase"
 	pgSSLmode  = "disable"
 )
 
@@ -86,7 +86,7 @@ func listenAndServeRest(addr string, grpcAddr string) error {
 
 func createDbConn() (*sql.DB, error) {
 	connStr := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=disable=%s connect_timeout=60",
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s connect_timeout=60",
 		pgHost,
 		pgPort,
 		pgUsername,

@@ -16,6 +16,6 @@ services:
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_USER: test-username
-      POSTGRES_PASSWORD: test-password
-      POSTGRES_DB: test-database
+      POSTGRES_USER: testusername
+      POSTGRES_PASSWORD: testpassword
+      POSTGRES_DB: testdatabase
