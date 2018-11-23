@@ -61,6 +61,15 @@ docker-build:
 		--build-arg SERVICE=$(SERVICE) \
 		--build-arg GITHUB_TOKEN=$(GITHUB_TOKEN)
 
+# Docker Compose commands
+
+.PHONY: up down
+
+up:
+	@docker-compose up
+down:
+	@docker-compose down
+
 # Protobuf commands
 
 .PHONY: protoc protoc-clean protoc-install protoc-build

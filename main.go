@@ -41,7 +41,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("PostgreSQL connection error:, %v", err)
 	}
+
+	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+
 	srv.db = db
+
 	fmt.Printf("Connected to PostgreSQL server on %v\n", pgPort)
 	go listenAndServeGrpc(grpcPort, srv)
 	log.Fatal(listenAndServeRest(restPort, grpcPort))
