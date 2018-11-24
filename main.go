@@ -7,6 +7,8 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/chiswicked/go-grpc-crud-server-boilerplate/errs"
 	api "github.com/chiswicked/go-grpc-crud-server-boilerplate/protobuf"
@@ -52,7 +54,9 @@ func main() {
 
 	fmt.Printf("Connected to PostgreSQL server on %v\n", pgPort)
 	go listenAndServeGrpc(grpcPort, srv)
-	log.Fatal(listenAndServeRest(restPort, grpcPort))
+	go listenAndServeRest(restPort, grpcPort)
+
+	waitForShutdown()
 }
 
 func listenAndServeGrpc(addr string, serviceServer api.ItemServiceServer) error {
@@ -117,4 +121,11 @@ func (s *server) DeleteItem(context.Context, *api.DeleteItemRequest) (*api.Delet
 
 func (s *server) UpdateItem(context.Context, *api.UpdateItemRequest) (*api.UpdateItemResponse, error) {
 	return nil, fmt.Errorf("Not implemented")
+}
+
+func waitForShutdown() {
+	s := make(chan os.Signal, 1)
+	signal.Notify(s, syscall.SIGINT, syscall.SIGTERM)
+	<-s
+	log.Printf("Shutting down %s", os.Getenv("APP"))
 }
