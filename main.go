@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/chiswicked/go-grpc-crud-server-boilerplate/errs"
 	api "github.com/chiswicked/go-grpc-crud-server-boilerplate/protobuf"
 	_ "github.com/lib/pq"
 
@@ -35,26 +36,23 @@ type server struct {
 
 func main() {
 	fmt.Println(startMsg(os.Getenv("APP")))
+
 	srv := &server{db: nil}
 	var err error
-	db, err := createDbConn()
-	if err != nil {
-		log.Fatalf("PostgreSQL connection error:, %v", err)
-	}
 
+	db, err := createDbConn()
+	errs.FatalIf("PostgreSQL connection error", err)
+	fmt.Printf("Connected to PostgreSQL server on %v\n", pgPort)
 	defer db.Close()
 
 	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
+	errs.PanicIf("PostgreSQL ping error", err)
+	fmt.Println("PostgreSQL ping ok")
 	srv.db = db
 
 	fmt.Printf("Connected to PostgreSQL server on %v\n", pgPort)
 	go listenAndServeGrpc(grpcPort, srv)
 	log.Fatal(listenAndServeRest(restPort, grpcPort))
-
 }
 
 func listenAndServeGrpc(addr string, serviceServer api.ItemServiceServer) error {
