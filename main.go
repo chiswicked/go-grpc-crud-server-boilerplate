@@ -13,11 +13,13 @@ import (
 	"github.com/chiswicked/go-grpc-crud-server-boilerplate/errs"
 	api "github.com/chiswicked/go-grpc-crud-server-boilerplate/protobuf"
 	_ "github.com/lib/pq"
+	"github.com/satori/go.uuid"
 
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 
 	"golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 )
 
 const (
@@ -103,12 +105,49 @@ func startMsg(app string) string {
 	return fmt.Sprintf("Initializing %v server", app)
 }
 
-func (s *server) CreateItem(context.Context, *api.CreateItemRequest) (*api.CreateItemResponse, error) {
-	return nil, fmt.Errorf("Not implemented")
+func (s *server) CreateItem(ctx context.Context, in *api.CreateItemRequest) (*api.CreateItemResponse, error) {
+	if len(in.Item.Name) <= 0 {
+		return nil, grpc.Errorf(codes.InvalidArgument, "Invalid Argument")
+	}
+
+	qry := `
+		INSERT INTO itemtable (uuid, name)
+		VALUES ($1, $2);
+	`
+	uid, err := uuid.NewV4()
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "Could not insert item into the database: %s", err)
+	}
+
+	out := &api.CreateItemResponse{Id: uid.String()}
+	_, err = s.db.ExecContext(ctx, qry, uid, in.Item.Name)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "Could not insert item into the database: %s", err)
+	}
+
+	return out, nil
 }
 
 func (s *server) GetItem(ctx context.Context, in *api.GetItemRequest) (*api.GetItemResponse, error) {
-	return nil, fmt.Errorf("Not implemented")
+	if _, err := uuid.FromString(in.Id); err != nil {
+		return nil, grpc.Errorf(codes.NotFound, "Not Found")
+	}
+
+	qry := `
+		SELECT uuid, name
+		FROM itemtable
+		WHERE uuid = $1;
+	`
+	out := &api.GetItemResponse{Item: &api.Item{}}
+	err := s.db.QueryRowContext(ctx, qry, in.Id).Scan(&out.Item.Id, &out.Item.Name)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, grpc.Errorf(codes.NotFound, "Not Found")
+		}
+		return nil, grpc.Errorf(codes.Internal, "Could not read item from the database: %s", err)
+	}
+
+	return out, nil
 }
 
 func (s *server) ListItems(context.Context, *api.ListItemsRequest) (*api.ListItemsResponse, error) {
