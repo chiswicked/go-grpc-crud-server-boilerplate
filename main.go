@@ -151,15 +151,15 @@ func (s *server) GetItem(ctx context.Context, in *api.GetItemRequest) (*api.GetI
 }
 
 func (s *server) ListItems(context.Context, *api.ListItemsRequest) (*api.ListItemsResponse, error) {
-	return nil, fmt.Errorf("Not implemented")
+	return nil, grpc.Errorf(codes.Unimplemented, "Not Implemented")
 }
 
 func (s *server) DeleteItem(context.Context, *api.DeleteItemRequest) (*api.DeleteItemResponse, error) {
-	return nil, fmt.Errorf("Not implemented")
+	return nil, grpc.Errorf(codes.Unimplemented, "Not Implemented")
 }
 
 func (s *server) UpdateItem(context.Context, *api.UpdateItemRequest) (*api.UpdateItemResponse, error) {
-	return nil, fmt.Errorf("Not implemented")
+	return nil, grpc.Errorf(codes.Unimplemented, "Not Implemented")
 }
 
 func waitForShutdown() {
