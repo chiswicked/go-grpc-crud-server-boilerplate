@@ -50,6 +50,8 @@ func InitGRPCGatewayServer(ctx context.Context, grpcAddr string, httpAddr string
 func StartGRPCGatewayServer(srvr *http.Server) {
 	go func() {
 		err := srvr.ListenAndServe()
-		errs.PanicIf("REST server error", err)
+		if err != http.ErrServerClosed {
+			errs.PanicIf("REST server error", err)
+		}
 	}()
 }
