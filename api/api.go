@@ -119,6 +119,24 @@ func (s *Server) DeleteItem(ctx context.Context, in *pb.DeleteItemRequest) (*pb.
 }
 
 // UpdateItem func
-func (s *Server) UpdateItem(context.Context, *pb.UpdateItemRequest) (*pb.UpdateItemResponse, error) {
-	return nil, grpc.Errorf(codes.Unimplemented, "Not Implemented")
+func (s *Server) UpdateItem(ctx context.Context, in *pb.UpdateItemRequest) (*pb.UpdateItemResponse, error) {
+	qry := `
+		UPDATE itemtable
+		SET name = $2
+		WHERE uuid = $1
+	`
+
+	res, err := s.db.ExecContext(ctx, qry, in.Item.Id, in.Item.Name)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "Could not update item in the database: %s", err)
+	}
+
+	_, err = res.RowsAffected()
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "Error while updating item in the database: %s", err)
+	}
+
+	// TODO: check rows affected
+
+	return &pb.UpdateItemResponse{}, nil
 }
