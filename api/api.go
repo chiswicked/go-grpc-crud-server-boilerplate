@@ -68,8 +68,32 @@ func (s *Server) GetItem(ctx context.Context, in *pb.GetItemRequest) (*pb.GetIte
 }
 
 // ListItems func
-func (s *Server) ListItems(context.Context, *pb.ListItemsRequest) (*pb.ListItemsResponse, error) {
-	return nil, grpc.Errorf(codes.Unimplemented, "Not Implemented")
+func (s *Server) ListItems(ctx context.Context, in *pb.ListItemsRequest) (*pb.ListItemsResponse, error) {
+	qry := `
+		SELECT uuid, name
+		FROM itemtable
+	`
+	var outItems = []*pb.Item{}
+
+	// jozsi := sql.Rows
+	rows, err := s.db.QueryContext(ctx, qry)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "Could not read items from the database: %s", err)
+	}
+
+	for rows.Next() {
+		var id, name string
+		err := rows.Scan(&id, &name)
+		outItems = append(outItems, &pb.Item{Id: id, Name: name})
+		if err != nil {
+			if err == sql.ErrNoRows {
+				break
+			}
+			return nil, grpc.Errorf(codes.Internal, "Could not read items from the database: %s", err)
+		}
+	}
+
+	return &pb.ListItemsResponse{Items: outItems}, nil
 }
 
 // DeleteItem func
