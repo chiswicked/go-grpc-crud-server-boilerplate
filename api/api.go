@@ -97,8 +97,25 @@ func (s *Server) ListItems(ctx context.Context, in *pb.ListItemsRequest) (*pb.Li
 }
 
 // DeleteItem func
-func (s *Server) DeleteItem(context.Context, *pb.DeleteItemRequest) (*pb.DeleteItemResponse, error) {
-	return nil, grpc.Errorf(codes.Unimplemented, "Not Implemented")
+func (s *Server) DeleteItem(ctx context.Context, in *pb.DeleteItemRequest) (*pb.DeleteItemResponse, error) {
+	qry := `
+		DELETE FROM itemtable
+		WHERE uuid = $1
+	`
+
+	res, err := s.db.ExecContext(ctx, qry, in.Id)
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "Could not delete item from the database: %s", err)
+	}
+
+	_, err = res.RowsAffected()
+	if err != nil {
+		return nil, grpc.Errorf(codes.Internal, "Error while deleting item from the database: %s", err)
+	}
+
+	// TODO: check rows affected
+
+	return &pb.DeleteItemResponse{}, nil
 }
 
 // UpdateItem func
