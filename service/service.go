@@ -7,7 +7,12 @@ import (
 
 	"github.com/chiswicked/go-grpc-crud-server-boilerplate/errs"
 	api "github.com/chiswicked/go-grpc-crud-server-boilerplate/protobuf"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/grpc-ecosystem/go-grpc-middleware/recovery"
+	"github.com/grpc-ecosystem/go-grpc-middleware/validator"
+	"github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 )
@@ -21,8 +26,20 @@ func StartTCPListener(addr string) net.Listener {
 
 // InitGRPCServer func
 func InitGRPCServer(srvc api.ItemServiceServer) *grpc.Server {
-	grpcServer := grpc.NewServer()
+	grpcServer := grpc.NewServer(
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			grpc_validator.UnaryServerInterceptor(),
+			grpc_prometheus.UnaryServerInterceptor,
+			grpc_recovery.UnaryServerInterceptor(),
+		)),
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			grpc_validator.StreamServerInterceptor(),
+			grpc_prometheus.StreamServerInterceptor,
+			grpc_recovery.StreamServerInterceptor(),
+		)),
+	)
 	api.RegisterItemServiceServer(grpcServer, srvc)
+	grpc_prometheus.Register(grpcServer)
 	return grpcServer
 }
 
@@ -46,8 +63,18 @@ func InitGRPCGatewayServer(ctx context.Context, grpcAddr string, httpAddr string
 	}
 }
 
-// StartGRPCGatewayServer func
-func StartGRPCGatewayServer(srvr *http.Server) {
+// InitPrometheusServer func
+func InitPrometheusServer(httpAddr string) *http.Server {
+	mux := http.NewServeMux()
+	mux.Handle("/metrics", promhttp.Handler())
+	return &http.Server{
+		Addr:    httpAddr,
+		Handler: mux,
+	}
+}
+
+// StartHTTPServer func
+func StartHTTPServer(srvr *http.Server) {
 	go func() {
 		err := srvr.ListenAndServe()
 		if err != http.ErrServerClosed {

@@ -19,6 +19,7 @@ import (
 const (
 	grpcAddr = ":8090"
 	gwAddr   = ":8080"
+	promAddr = ":8081"
 
 	pgHost     = "localhost"
 	pgPort     = "5432"
@@ -52,8 +53,12 @@ func main() {
 	defer grpcServer.GracefulStop()
 
 	gwServer := service.InitGRPCGatewayServer(ctx, grpcAddr, gwAddr)
-	go service.StartGRPCGatewayServer(gwServer)
+	go service.StartHTTPServer(gwServer)
 	defer gwServer.Shutdown(ctx)
+
+	promServer := service.InitPrometheusServer(promAddr)
+	go service.StartHTTPServer(promServer)
+	defer promServer.Shutdown(ctx)
 
 	waitForShutdown()
 }
