@@ -2,12 +2,16 @@ package service
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/chiswicked/go-grpc-crud-server-boilerplate/errs"
 	api "github.com/chiswicked/go-grpc-crud-server-boilerplate/protobuf"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/urfave/cli"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/grpc-ecosystem/go-grpc-middleware/recovery"
@@ -16,6 +20,31 @@ import (
 	"github.com/grpc-ecosystem/grpc-gateway/runtime"
 	"google.golang.org/grpc"
 )
+
+// CreateDBConn func
+func CreateDBConn(c *cli.Context) (*sql.DB, error) {
+	connStr := fmt.Sprintf(
+		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s connect_timeout=60",
+		c.String("db-host"),
+		c.String("db-port"),
+		c.String("db-user"),
+		c.String("db-password"),
+		c.String("db-name"),
+		c.String("db-ssl-mode"),
+	)
+	return sql.Open("postgres", connStr)
+}
+
+// TestDBConn func
+func TestDBConn(db *sql.DB, attempts int, interval int) (err error) {
+	for i := 0; i < attempts; i++ {
+		if err = db.Ping(); err == nil {
+			break
+		}
+		time.Sleep(time.Duration(interval) * time.Millisecond)
+	}
+	return err
+}
 
 // StartTCPListener func
 func StartTCPListener(addr string) net.Listener {

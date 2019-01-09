@@ -1,18 +1,22 @@
 version: '3'
 services:
-  srv:
+  service:
     build:
       context: .
       args:
         ORG: chiswicked
         SERVICE: go-grpc-crud-server-boilerplate
+    environment:
+      DB_HOST: postgres
+    container_name: service
     ports:
       - "8080:8080"
       - "8081:8081"
     depends_on:
-       - db
-  db:
+       - postgres
+  postgres:
     image: postgres:11.1-alpine
+    container_name: postgres
     restart: always
     ports:
       - "5432:5432"
@@ -22,16 +26,20 @@ services:
       POSTGRES_DB: testdatabase
   prometheus:
     image: prom/prometheus:v2.6.0
+    container_name: prometheus
     ports:
      - 9090:9090
     depends_on:
+     - service
      - exporter
   exporter:
     image: prom/node-exporter:v0.17.0
+    container_name: exporter
     ports:
      - "9100:9100"
   grafana:
     image: grafana/grafana:5.4.2
+    container_name: grafana
     ports:
      - "3000:3000"
     depends_on:
