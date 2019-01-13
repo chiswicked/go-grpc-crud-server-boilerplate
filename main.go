@@ -7,7 +7,8 @@ import (
 	"path"
 	"syscall"
 
-	"github.com/chiswicked/go-grpc-crud-server-boilerplate/api"
+	"github.com/chiswicked/go-grpc-crud-server-boilerplate/item"
+
 	"github.com/chiswicked/go-grpc-crud-server-boilerplate/errs"
 	"github.com/chiswicked/go-grpc-crud-server-boilerplate/service"
 	_ "github.com/lib/pq"
@@ -44,11 +45,13 @@ func start(c *cli.Context) {
 	)
 	errs.PanicIf("PostgreSQL ping error", err)
 
-	srv := api.CreateAPI(db)
+	itemRepo := item.NewPostgresRepository(db)
+	itemService := item.NewService(itemRepo)
+	itemAPI := item.NewItemAPI(itemService)
 
 	lsnr := service.StartTCPListener(c.String("service-grpc-port"))
 
-	grpcServer := service.InitGRPCServer(srv)
+	grpcServer := service.InitGRPCServer(itemAPI)
 	go service.StartGRPCServer(grpcServer, lsnr)
 	defer grpcServer.GracefulStop()
 
